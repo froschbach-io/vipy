@@ -18,15 +18,16 @@ args = parser.parse_args()
 
 extensions = ["MOV", "mov", "AVI", "avi", "MKV", "mkv"]
 player = "omxplayer"
+viewer = "pngview"
 tvservice = "tvservice"
 videos = []
 start = args.start
 cursor = 0
-pidfname = "/tmp/vipy.pid"
 
 if args.dryrun:
 	player = "echo"
 	tvservice = "echo"
+	viewer = "echo"
 
 reloadConfig = True
 terminate = False
@@ -85,11 +86,12 @@ def mainLoop():
 	while True:
 		video = videos[cursor]
 		fname = os.path.basename(video)
-		cmd = [player, video, "-n", "-1", "--blank"]
+		cmd = [player, video, "-n", "-1", "--layer", "1"]
+
+		fbase = os.path.splitext(video)[0]
 
 		subtitle = None
 		try:
-			fbase = os.path.splitext(video)[0]
 			if os.path.isfile(fbase + ".srt"):
 				subtitle = fbase + ".srt"
 			elif os.path.isfile(fbase + ".SRT"):
@@ -99,12 +101,33 @@ def mainLoop():
 		if not subtitle is None:
 			cmd.append("--subtitle")
 			cmd.append(subtitle)
+			cmd.append("--align")
+			cmd.append("center")
+
+		caption = None
+		try:
+			if os.path.isfile(fbase + ".png"):
+				caption = fbase + ".png"
+			elif os.path.isfile(fbase + ".PNG"):
+				caption = fbase + ".PNG"
+		except Exception:
+			pass
 		
 		now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 		print("--", now, "Playing", fname)
-		result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf8')
-		if result.returncode != 0 or args.verbose:
-			print(str(result.stdout))
+		pomx = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf8')
+
+		ppng = None
+		if not caption is None:
+			ppng = subprocess.Popen([viewer, "-b", "0", "-l", "2", "-x", "0", "-y", "0", caption], 
+				stdout=None, stderr=subprocess.STDOUT, encoding='utf8')
+
+		out = pomx.communicate()
+		ppng.kill()
+		ppng.communicate()
+
+		if pomx.returncode != 0 or args.verbose:
+			print(out)
 
 		if args.pause:
 			time.sleep(1)
@@ -119,12 +142,12 @@ if __name__ == '__main__':
 	print("--", "PID", pid)
 
 	try:	
-		with PidFile('vipy') as pidf:
+		with PidFile(pidname='vipy', piddir='/tmp') as pidf:
 			print("--", "PID File", pidf.piddir, pidf.pidname)
 			print("--", "Switching tvservice on")
-			result = subprocess.run([tvservice, "-p"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf8')
-			if result.returncode != 0 or args.verbose:
-				print(str(result.stdout))
+			#result = subprocess.run([tvservice, "-p"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf8')
+			#if result.returncode != 0 or args.verbose:
+			#	print(str(result.stdout))
 
 			# control loop
 			while True:
