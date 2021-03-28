@@ -16,7 +16,7 @@ parser.add_argument('folder', help='folder with video files')
 
 args = parser.parse_args()
 
-extensions = ["MOV", "mov", "AVI", "avi", "MKV", "mkv"]
+extensions = ["MOV", "mov", "MP4", "mp4", "AVI", "avi", "MKV", "mkv"]
 player = "omxplayer"
 viewer = "pngview"
 tvservice = "tvservice"
@@ -123,8 +123,9 @@ def mainLoop():
 				stdout=None, stderr=subprocess.STDOUT, encoding='utf8')
 
 		out = pomx.communicate()
-		ppng.kill()
-		ppng.communicate()
+		if not ppng is None:
+			ppng.kill()
+			ppng.communicate()
 
 		if pomx.returncode != 0 or args.verbose:
 			print(out)
@@ -145,9 +146,9 @@ if __name__ == '__main__':
 		with PidFile(pidname='vipy', piddir='/tmp') as pidf:
 			print("--", "PID File", pidf.piddir, pidf.pidname)
 			print("--", "Switching tvservice on")
-			#result = subprocess.run([tvservice, "-p"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf8')
-			#if result.returncode != 0 or args.verbose:
-			#	print(str(result.stdout))
+			result = subprocess.run([tvservice, "-p"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf8')
+			if result.returncode != 0 or args.verbose:
+				print(str(result.stdout))
 
 			# control loop
 			while True:
