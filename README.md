@@ -8,6 +8,11 @@ Supports
 * SIGHUP to reload video folder
 * SIGTERM for graceful termination
 
+Here is an article which describes how to set up a Raspberry Pi for playing videos 
+in an endless loop suitable for shop windows or museums:
+
+https://froschbach.io/articles/vipy/
+
 ## Usage
 
 ```
